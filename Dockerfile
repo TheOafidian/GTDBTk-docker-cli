@@ -54,7 +54,7 @@ RUN python -m pip install --upgrade pip && \
     python -m pip install gtdbtk==${VER}
 
 # ---------------------------------------------------------------------------- #
-# ---------------------------- SET THE ENTRYPOINT ---------------------------- #
+# ------------------------- DO NOT SET THE ENTRYPOINT ------------------------ #
 # ---------------------------------------------------------------------------- #
-ENTRYPOINT ["gtdbtk"]
-CMD ["--help"]
+# ENTRYPOINT ["gtdbtk"]
+# CMD ["--help"]
