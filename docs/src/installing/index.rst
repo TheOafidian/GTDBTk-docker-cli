@@ -33,12 +33,12 @@ Hardware requirements
      - Storage
      - Time
    * - Archaea
-     - ~60 GB
-     - ~106 GB
+     - ~100 GB
+     - ~100 GB
      - ~90 minutes / 1,000 genomes @ 64 CPUs
    * - Bacteria
-     - ~90GB (545 GB when using --full_tree)
-     - ~106 GB
+     - ~140GB (950 GB when using --full_tree)
+     - ~100 GB
      - ~90 minutes / 1,000 genomes @ 64 CPUs
 
 .. note::
@@ -104,9 +104,7 @@ GTDB-Tk makes use of the following 3rd party dependencies and assumes they are o
    * - `FastTree <http://www.microbesonline.org/fasttree/>`_
      - >= 2.1.9
      - Price MN, et al. 2010. `FastTree 2 - Approximately Maximum-Likelihood Trees for Large Alignments <https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2835736/>`_. *PLoS One*, 5, e9490.
-   * - `Mash <https://github.com/marbl/Mash>`_
-     - >= 2.2
-     - Ondov BD, et al. 2016. `Mash: fast genome and metagenome distance estimation using MinHash <https://genomebiology.biomedcentral.com/articles/10.1186/s13059-016-0997-x>`_. *Genome Biol* 17, 132. doi: doi: 10.1186/s13059-016-0997-x.
+
 
 
 Please cite these tools if you use GTDB-Tk in your work.
@@ -117,7 +115,7 @@ Please cite these tools if you use GTDB-Tk in your work.
 GTDB-Tk reference data
 ----------------------
 
-GTDB-Tk requires ~110G of external data that needs to be downloaded and unarchived:
+GTDB-Tk requires ~100G of external data (for R232) that needs to be downloaded and unarchived:
 
 **For full package:**
 
@@ -128,6 +126,7 @@ GTDB-Tk requires ~110G of external data that needs to be downloaded and unarchiv
     tar xvzf gtdbtk_data.tar.gz
 
 **For split package:**
+Currently the split pacakge is not available for R232. We have focused on adding more mirror and reducing the storage footprint of the package for this release.
 
 To create an archive from the GTDB-Tk release data parts:
 
@@ -135,12 +134,23 @@ To create an archive from the GTDB-Tk release data parts:
 2. Open a terminal or command prompt.
 3. Navigate to the directory containing the parts of the GTDB-Tk release data.
 4. Use the following command to concatenate all parts into a single archive:
-   cat gtdbtk_r220_data.tar.gz.part_* > gtdbtk_r220_data.tar.gz
+   cat gtdbtk_r232_data.tar.gz.part_* > gtdbtk_r232_data.tar.gz
 
-5. Once the command finishes executing, you will have a single archive file named 'gtdbtk_r220_data.tar.gz' in the same directory.
+5. Once the command finishes executing, you will have a single archive file named 'gtdbtk_r226_data.tar.gz' in the same directory.
 
-You can find the gtdbtk_r220_data.tar.gz.part_* files under:
-https://data.ace.uq.edu.au/public/gtdb/data/releases/release220/220.0/auxillary_files/gtdbtk_package/split_package/gtdbtk_r220_data.tar.gz.part_aa
+You can find the gtdbtk_r232_data.tar.gz.part_* files under:
+https://data.ace.uq.edu.au/public/gtdb/data/releases/release232/232.0/auxillary_files/gtdbtk_package/split_package/
+
+**Alias the GTDB-Tk reference data:**
+
+GTDB-Tk requires an environment variable named ``GTDBTK_DATA_PATH`` to be set to the directory
+containing the unarchived reference data. This is documented under:
+
+- :ref:`pip installation <installing/pip>`
+- :ref:`Bioconda installation <installing/bioconda>`
+- :ref:`Docker installation <installing/docker>`
+
+
 
 
 .. note:: Note that different versions of the GTDB release data may not run on all versions of GTDB-Tk, check the supported versions!
@@ -154,9 +164,17 @@ https://data.ace.uq.edu.au/public/gtdb/data/releases/release220/220.0/auxillary_
      - Minimum version
      - Maximum version
      - MD5
-   * - `R220 <https://data.ace.uq.edu.au/public/gtdb/data/releases/latest/auxillary_files/gtdbtk_package/full_package/gtdbtk_data.tar.gz>`_
-     - 2.4.0
+   * - `R232 <https://data.gtdb.ecogenomic.org/releases/release232/232.0/auxillary_files/gtdbtk_package/full_package/gtdbtk_r232_data.tar.gz>`_
+     - 2.7.0
      - Current
+     - 25a59e0352b1fd150c589f56559767d4
+   * - `R226 <https://data.gtdb.ecogenomic.org/releases/release226/226.0/auxillary_files/gtdbtk_package/full_package/gtdbtk_r226_data.tar.gz>`_
+     - 2.4.1
+     - 2.6.1
+     - 24b476ea5a4ef30519d461e56cc4a27f
+   * - `R220 <https://data.gtdb.ecogenomic.org/releases/release220/220.0/auxillary_files/gtdbtk_package/full_package/gtdbtk_r220_data.tar.gz>`_
+     - 2.4.0
+     - 2.6.1
      - 5aafa1b9c27ceda003d75adf238ed9e0
    * - `R214 <https://data.gtdb.ecogenomic.org/releases/release214/214.0/auxillary_files/gtdbtk_r214_data.tar.gz>`_
      - 2.1.0

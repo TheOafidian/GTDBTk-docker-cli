@@ -20,15 +20,7 @@ It is strongly recommended to create a new conda environment for each version of
 GTDB-Tk requires third-party packages from the ``conda-forge`` and ``bioconda`` channels, make sure to
 specify those channels in that order!
 
-.. code-block:: bash
-
-    # NOTE: replace 2.1.1 with the version you wish to install
-
-    # using conda
-    conda create -n gtdbtk-2.1.1 -c conda-forge -c bioconda gtdbtk=2.1.1
-
-    # using mamba (alternative)
-    mamba create -n gtdbtk-2.1.1 -c conda-forge -c bioconda gtdbtk=2.1.1
+.. include:: ../includes/install_block.rst
 
 Step 3: Download and alias the GTDB-Tk reference data
 -----------------------------------------------------
@@ -54,10 +46,5 @@ Manually
 You can automatically alias ``GTDBTK_DATA_PATH`` whenever the environment is activated by
 `setting environment-specific variables <https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#setting-environment-variables>`_, e.g.:
 
-.. code-block:: bash
+.. include:: ../includes/manually_alias_reference.rst
 
-    # Activate the GTDB-Tk conda environment
-    conda activate gtdbtk-2.1.1
-
-    # Set the environment variable to the directory containing the GTDB-Tk reference data
-    conda env config vars set GTDBTK_DATA_PATH="/path/to/unarchived/gtdbtk/data";

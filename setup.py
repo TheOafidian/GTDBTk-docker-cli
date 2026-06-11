@@ -36,13 +36,19 @@ setup(
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
+        'Programming Language :: Python :: 3.11',
+        'Programming Language :: Python :: 3.12',
+        'Programming Language :: Python :: 3.13',
         'Topic :: Scientific/Engineering :: Bio-Informatics',
     ],
     data_files=[("", ["LICENSE"])],
     description=meta['description'],
     entry_points={
         'console_scripts': [
-            'gtdbtk = gtdbtk.__main__:main'
+            'gtdbtk = gtdbtk.__main__:main',
+            "gtdb_to_ncbi_majority_vote = scripts.gtdb_to_ncbi_majority_vote:main",
         ]
     },
     install_requires=["dendropy ~= 4.1", 'numpy ~= 1.9', 'tqdm ~= 4.35', 'pydantic ~= 1.9'],
@@ -54,6 +60,7 @@ setup(
     name=meta['name'],
     packages=find_packages(),
     package_data={'gtdbtk': ['VERSION', 'tests/data/genomes/*']},
+    scripts=["scripts/gtdb_to_ncbi_majority_vote.py"],
     python_requires=meta['python_requires'],
     url=meta['url'],
     version=meta['version']

@@ -1,6 +1,110 @@
 Announcements
 =============
 
+GTDB-Tk 2.7.2 available
+-----------------------
+
+*May 8, 2026*
+
+* GTDB-Tk version ``2.7.2`` is now available.
+* This release fixed the "warning_counter" error during the placement in the bacterial backbone reference tree.
+* It removes the `--skip_ani_screen` option from the `test` command.
+
+
+GTDB-Tk 2.7.1 available
+-----------------------
+
+*April 17, 2026*
+
+* GTDB-Tk version ``2.7.1`` is now available.
+* This release fixes an MD5 mismatch in the ``check_install`` configuration.
+* Although all genomes are classified with ``skani``, selecting ``--place_species`` still requires ``_bac_gids``, ``_ar_gids``, and ``bac_ar_diff`` for downstream processing.
+
+GTDB-Tk 2.7.0 available
+-----------------------
+
+*April 15, 2026*
+
+* GTDB-Tk version ``2.7.0`` is now available.
+* This version of GTDB-Tk compatible with the new version of the GTDB-Tk reference package (Release 232).
+  `gtdbtk_r232_data.tar.gz <https://data.gtdb.ecogenomic.org/releases/release232/232.0/auxillary_files/gtdbtk_package/>`_.
+
+
+
+GTDB-Tk 2.6.2 available
+-----------------------
+
+*January 29, 2026*
+
+* GTDB-Tk version ``2.6.2`` is now available.
+
+* This release resolves crash when running GTDB-Tk in a directory with an existing stage log.
+
+GTDB-Tk 2.6.1 available
+-----------------------
+
+*December 12, 2025*
+
+* GTDB-Tk version ``2.6.1`` is now available.
+
+* This release resolves the check_install error that reports ``Path not set for StageLogger``
+
+
+GTDB-Tk 2.6.0 available
+-----------------------
+
+*December 10, 2025*
+
+* GTDB-Tk version ``2.6.0`` is now available.
+
+
+GTDB-Tk 2.5.2 available
+-----------------------
+
+*September 12, 2025*
+
+* GTDB-Tk version ``2.5.2`` is now available.
+
+* This release resolves the ani_screen error that reports ``TypeError: bool() undefined when iterable == total == None``.
+
+
+GTDB-Tk 2.5.1 available
+-----------------------
+
+*September 9, 2025*
+
+* GTDB-Tk version ``2.5.1`` is now available.
+
+
+GTDB-Tk 2.5.0 available
+-----------------------
+
+*September 8, 2025*
+
+* GTDB-Tk version ``2.5.0`` is now available.
+* This version of GTDB-Tk compatible with the new version of the GTDB-Tk reference package (Release 226).
+  `gtdbtk_r226_data.tar.gz <https://data.gtdb.ecogenomic.org/releases/release220/220.0/auxillary_files/gtdbtk_package/>`_.
+
+
+GTDB-Tk 2.4.1 available
+-----------------------
+
+*April 16, 2025*
+
+* GTDB-Tk version ``2.4.1`` is now available.
+* This version of GTDB-Tk compatible with the new version of the GTDB-Tk reference package (Release 226).
+  `gtdbtk_r226_data.tar.gz <https://data.gtdb.ecogenomic.org/releases/release220/220.0/auxillary_files/gtdbtk_package/>`_.
+
+
+GTDB R226 available
+-----------------------
+
+*April 16, 2025*
+
+* GTDB Release 226 is now available and will be used from version ``2.4.1`` and up.
+* This version of GTDB-Tk is compatible with both release220 and release226 of the GTDB-Tk reference package.
+  `gtdbtk_r226_data.tar.gz <https://data.gtdb.ecogenomic.org/releases/release226/226.0/auxillary_files/>`_.
+
 GTDB-Tk 2.4.0 available
 -----------------------
 

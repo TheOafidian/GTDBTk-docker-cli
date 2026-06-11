@@ -140,6 +140,19 @@ class OptionsParser(object):
                              f'unsupported by downstream applications: {file_path}')
         return True
 
+    def _reset_align_options(self, options):
+        options.taxa_filter = None
+        options.custom_msa_filters = False
+        # Added here due to the other mutex argument being included above.
+        options.skip_trimming = False
+        options.min_consensus = None
+        options.min_perc_taxa = None
+        options.skip_gtdb_refs = False
+        options.cols_per_gene = None
+        options.max_consensus = None
+        options.rnd_seed = None
+        options.skip_trimming = False
+
     def _genomes_to_process(self, genome_dir, batchfile, extension):
         """Get genomes to process.
 
@@ -277,7 +290,8 @@ class OptionsParser(object):
 
         return taxonomy
 
-    def identify(self, options , classified_genomes = None):
+
+    def identify(self, options , classified_genomes = None,process_classified_species=False):
         """Identify marker genes in genomes.
 
         Parameters
@@ -309,11 +323,15 @@ class OptionsParser(object):
         if not hasattr(self, 'genomes_to_process'):
             self.genomes_to_process = genomes
 
-        if classified_genomes is not None:
+        if not process_classified_species and classified_genomes is not None:
             for marker_set_id in ['bac120', 'ar53']:
                 if marker_set_id in classified_genomes:
                     for classified_genome in classified_genomes.get(marker_set_id).keys():
                         genomes.pop(classified_genome, None)
+
+        self.logger.info(f'Identifying marker genes in {len(genomes):,} genome(s).')
+
+
 
         markers = Markers(options.cpus)
         reports = markers.identify(genomes,
@@ -495,7 +513,7 @@ class OptionsParser(object):
 
             shutil.copytree(input_dir, genome_test_dir)
 
-            args = ['gtdbtk', 'classify_wf','--skip_ani_screen', '--genome_dir', genome_test_dir,
+            args = ['gtdbtk', 'classify_wf','--place_species', '--genome_dir', genome_test_dir,
                     '--out_dir', output_dir, '--cpus', str(options.cpus), '-f']
             self.logger.info('Command: {}'.format(' '.join(args)))
 
@@ -536,7 +554,7 @@ class OptionsParser(object):
         self.logger.info('Test has successfully finished.')
         return True
 
-    def classify(self, options,all_classified_ani=False,all_failed_prodigal=False):
+    def classify(self, options,all_classified_ani=False,all_failed_prodigal=False,process_classified_genomes=None):
         """Determine taxonomic classification of genomes.
 
         Parameters
@@ -545,18 +563,16 @@ class OptionsParser(object):
             The CLI arguments input by the user.
         """
 
+        if process_classified_genomes is None:
+            process_classified_genomes = getattr(options, 'place_species', False)
+        skip_ani_screen = getattr(options, 'skip_ani_screen', False)
+
         classify_step = ClassifyStep()
         classify_step.starts_at = datetime.now()
         classify_step.output_dir = options.out_dir
         classify_step.debug_option = options.debug
         classify_step.full_tree = options.full_tree
-        classify_step.skip_ani_screen = options.skip_ani_screen
-        classify_step.no_mash = options.no_mash
-        classify_step.mash_k = options.mash_k
-        classify_step.mash_v = options.mash_v
-        classify_step.mash_s = options.mash_s
-        classify_step.mash_db = options.mash_db
-        classify_step.mash_max_dist = options.mash_max_distance
+        classify_step.place_species = process_classified_genomes
 
         ani_summary_files = {}
         if self.stage_logger.has_stage(ANIScreenStep):
@@ -591,17 +607,12 @@ class OptionsParser(object):
                      scratch_dir=options.scratch_dir,
                      debugopt=options.debug,
                      fulltreeopt=options.full_tree,
-                     skip_ani_screen=options.skip_ani_screen,
+                     skip_ani_screen=skip_ani_screen,
                      genes=options.genes,
-                     no_mash=options.no_mash,
-                     mash_k=options.mash_k,
-                     mash_v=options.mash_v,
-                     mash_s=options.mash_s,
-                     mash_db=options.mash_db,
-                     mash_max_dist=options.mash_max_distance,
                      ani_summary_files=ani_summary_files,
                      all_classified_ani=all_classified_ani,
-                     all_failed_prodigal=all_failed_prodigal
+                     all_failed_prodigal=all_failed_prodigal,
+                    process_classified_genomes=process_classified_genomes
                      )
 
         classify_step.ends_at = datetime.now()
@@ -626,7 +637,7 @@ class OptionsParser(object):
         self.logger.info('Done.')
 
     def ani_screen(self, options ):
-        """Run a mash/skani screen of all user genomes
+        """Run a skani screen of all user genomes
         against the reference genomes.
 
         Parameters
@@ -638,12 +649,7 @@ class OptionsParser(object):
         ani_step = ANIScreenStep()
         ani_step.starts_at = datetime.now()
         ani_step.output_dir = options.out_dir
-        ani_step.mash_db = options.mash_db
-        ani_step.mash_k = options.mash_k
-        ani_step.mash_v = options.mash_v
-        ani_step.mash_s = options.mash_s
         ani_step.min_af = options.min_af
-        ani_step.mash_max_dist = options.mash_max_distance
 
         if options.genome_dir:
             check_dir_exists(options.genome_dir)
@@ -662,14 +668,8 @@ class OptionsParser(object):
         aniscreener = ANIScreener(options.cpus,options.min_af)
         classified_genomes,reports = aniscreener.run_aniscreen(
             genomes=genomes,
-            no_mash=options.no_mash,
             out_dir=options.out_dir,
-            prefix=options.prefix,
-            mash_k=options.mash_k,
-            mash_v=options.mash_v,
-            mash_s=options.mash_s,
-            mash_max_dist=options.mash_max_distance,
-            mash_db=options.mash_db)
+            prefix=options.prefix)
 
 
         self.logger.info('Done.')
@@ -887,8 +887,7 @@ class OptionsParser(object):
                                               options.extension)
 
         ani_rep = ANIRep(options.cpus)
-        ani_rep.run(genomes, options.no_mash, options.mash_d, options.out_dir, options.prefix,
-                    options.mash_k, options.mash_v, options.mash_s, options.min_af, options.mash_db)
+        ani_rep.run(genomes, options.out_dir, options.prefix, options.min_af)
 
         self.logger.info('Done.')
 
@@ -1088,12 +1087,6 @@ class OptionsParser(object):
                     self.logger.info('Exiting workflow.')
                     sys.exit(0)
 
-            # if options.skip_aniscreen is false,
-            # we need to make sure the options.mash_db is selected too to point to the folder
-            # where the sketch file is.
-            if not options.skip_ani_screen and not options.no_mash and not options.mash_db:
-                self.logger.error('You must specify a path to the mash database with --mash_db')
-                sys.exit(1)
 
             #options.write_single_copy_genes = False
 
@@ -1117,13 +1110,13 @@ class OptionsParser(object):
                         classify_method = Classify()
                         classified_genomes=classify_method.load_skani_results_pre_pplacer(ani_summary_files)
                         classified_genomes = classify_method.convert_rows_to_dict(classified_genomes)
-                        len_mash_classified_bac120 = len(classified_genomes['bac120']) \
+                        len_skani_classified_bac120 = len(classified_genomes['bac120']) \
                             if 'bac120' in classified_genomes else 0
 
-                        len_mash_classified_ar53 = len(classified_genomes['ar53']) \
+                        len_skani_classified_ar53 = len(classified_genomes['ar53']) \
                             if 'ar53' in classified_genomes else 0
 
-                        self.logger.info(f'{len_mash_classified_ar53 + len_mash_classified_bac120} genome(s) have '
+                        self.logger.info(f'{len_skani_classified_ar53 + len_skani_classified_bac120} genome(s) have '
                                          f'been classified using the ANI pre-screening step.')
 
                         options.skip_ani_screen = True
@@ -1145,33 +1138,39 @@ class OptionsParser(object):
                     self.stage_logger.reset_steps()
 
             if options.genes:
-                if not options.skip_ani_screen:
                     self.logger.warning('The --genes flag is set to True. The ANI screening step will be skipped.')
                     options.skip_ani_screen = True
 
-
-            if not options.skip_ani_screen:
+            skip_ani_screen = getattr(options, 'skip_ani_screen', False)
+            if not skip_ani_screen:
                 all_classified_ani,classified_genomes = self.ani_screen(options)
 
             # if all genomes have been classified by the ani_screen step, we do not need to run the identify step
             options.identify_dir = options.out_dir
             options.align_dir = options.out_dir
             all_failed_prodigal = False
-            if all_classified_ani:
-                self.logger.info('All genomes have been classified by the ANI screening step, Identify and Align steps will be skipped.')
+            process_classified_genomes = False
+
+            if options.place_species:
+                process_classified_genomes = True
+                if all_classified_ani:
+                    # All genomes are classified by the ani_screen step, but placement is requested.
+                    # We will run the identify and align step for all genomes.
+                    self.logger.info('All genomes have been classified by the ANI screening step. However, '
+                                     '--place_species is set to True; the species placement step will be '
+                                     'run for all genomes.')
+                else:
+                    # not all genomes are classified by the ani_screen step, but placement is requested.
+                    # we will run the identify and align step for all genomes.
+                    self.logger.info('The --place_species flag is set to True. All genomes (including '
+                                     'classified ones) will be placed in the tree.')
+
+            if all_classified_ani and not options.place_species:
+                self.logger.info('All genomes have been classified by the ANI screening step. '
+                                 'Identify and Align steps will be skipped.')
             else:
-                self.identify(options, classified_genomes)
-                options.taxa_filter = None
-                options.custom_msa_filters = False
-                # Added here due to the other mutex argument being included above.
-                options.skip_trimming = False
-                options.min_consensus = None
-                options.min_perc_taxa = None
-                options.skip_gtdb_refs = False
-                options.cols_per_gene = None
-                options.max_consensus = None
-                options.rnd_seed = None
-                options.skip_trimming = False
+                self.identify(options, classified_genomes,process_classified_species=process_classified_genomes)
+                self._reset_align_options(options)
 
                 all_failed_prodigal = self.align(options)
 
@@ -1179,7 +1178,8 @@ class OptionsParser(object):
             #ani step again, so we set the skip_aniscreen to True
             options.skip_ani_screen = True
 
-            self.classify(options,all_classified_ani= all_classified_ani,all_failed_prodigal=all_failed_prodigal)
+            self.classify(options,all_classified_ani= all_classified_ani,all_failed_prodigal=all_failed_prodigal,
+                          process_classified_genomes=process_classified_genomes)
             if not options.keep_intermediates:
                 self.remove_intermediate_files(options.out_dir,'classify_wf')
 
@@ -1191,14 +1191,7 @@ class OptionsParser(object):
         elif options.subparser_name == 'infer':
             self.infer(options)
         elif options.subparser_name == 'classify':
-            # if options.skip_ani_screen is not selected,
-            # we need to make sure the options.mash_db is selected too to point to the folder
-            # where the sketch file is.
-            if not options.skip_ani_screen and not options.no_mash and not options.mash_db:
-                print(options.skip_ani_screen, options.no_mash, options.mash_db)
-                self.logger.error('You must specify a path to the mash database with --mash_db')
             self.classify(options)
-
         elif options.subparser_name == 'root':
             self.root(options)
         elif options.subparser_name == 'decorate':
@@ -1230,3 +1223,5 @@ class OptionsParser(object):
 
 
         return 0
+
+

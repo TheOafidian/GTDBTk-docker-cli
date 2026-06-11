@@ -57,7 +57,6 @@ def print_help():
     convert_to_itol    -> Convert a GTDB-Tk Newick tree to an iTOL tree
     convert_to_species -> Convert GTDB genome IDs to GTDB species names
  
-
   Testing:
     test          -> Validate the classify_wf pipeline with 3 archaeal genomes 
     check_install -> Verify third party programs and GTDB reference package
@@ -75,7 +74,6 @@ def main():
         sys.exit(0)
     elif sys.argv[1] in {'-v', '--v', '-version', '--version'}:
         print(f"gtdbtk: version {__version__} {__copyright__} {__author__}")
-
         # Warn the user they are not using the latest version (if possible)
         latest_ver = get_gtdbtk_latest_version()
         if latest_ver and latest_ver != __version__:

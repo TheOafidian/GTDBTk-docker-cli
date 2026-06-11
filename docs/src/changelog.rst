@@ -2,6 +2,94 @@
 Change log
 ==========
 
+2.7.2
+-----
+
+Bug Fixes:
+
+* (`#705 <https://github.com/Ecogenomics/GTDBTk/issues/705>`_) Fixes the "warning_counter" error during the placement in the bacterial backbone reference tree.
+* (`#701 <https://github.com/Ecogenomics/GTDBTk/issues/701>`_) Removes the `--skip_ani_screen` option from the `test` command.
+
+
+2.7.1
+-----
+
+Bug Fixes:
+
+* (`#699 <https://github.com/Ecogenomics/GTDBTk/issues/699>`_) Although all genomes are classified with ``skani``, selecting ``--place_species`` still requires ``_bac_gids``, ``_ar_gids``, and ``bac_ar_diff`` for downstream processing.
+* (`#698 <https://github.com/Ecogenomics/GTDBTk/issues/698>`_) Fixes an MD5 mismatch in the ``check_install`` configuration.
+
+
+2.7.0
+-----
+
+Bug Fixes:
+
+* (`#684 <https://github.com/Ecogenomics/GTDBTk/issues/684>`_) Remove 'name' from JSON data before unpacking into Step classes.
+
+Major Changes:
+
+* **Pre-sketched skani database:** GTDB-Tk now uses a skani pre-sketched database of the GTDB representative genomes. This significantly reduces the database storage footprint from 198 GB (in Release 232) down to 98 GB.
+* **Representative genomes availability:** The GTDB representative genomes are now available via the "Download" page on the GTDB website.
+* **Deprecated flag:** Because the database is already sketched natively, the `--skani_sketch_dir` flag is now deprecated.
+* **Replaced `--skip_ani_screen` with `--place_species`:** The `--skip_ani_screen` flag is now deprecated in v2.7.0 and has been replaced by the `--place_species` flag. The logic has been updated to reflect the new database structure:
+    * *Previously:* Using `--skip_ani_screen`, genomes placed in a genus by pplacer were only compared to representative genomes within that specific genus.
+    * *Now:* Because the database is a single skani sketch, user genomes are compared against *all* GTDB reference genomes once at the very beginning of the pipeline. When the new `--place_species` flag is selected, the genomes are still explicitly placed in the reference tree.
+
+2.6.1
+_____
+
+Bug Fixes:
+
+* (`#680 <https://github.com/Ecogenomics/GTDBTk/issues/680>`_) This release resolves the check_install error that reports ``Path not set for StageLogger``
+
+2.6.0
+-----
+
+Major Changes:
+
+* GTDB-Tk has now a fixed version for skani (v0.3.1) and pplacer (v1.1.alpha19) to i) ensure reproducibility of results and ii) use the sketch format compatible with skani v0.3.1.
+* The limit of number of genomes compared in dense genera has been removed.This ensures that all representative genomes in a genus are compared, preventing incorrect species assignments when the closest genome by ANI is outside the previous 100-genome limit. This is especially important in dense genera like Collinsella and significantly improves classification accuracy, even if runtime increases slightly.
+
+Bug Fixes:
+
+* (`#670 <https://github.com/Ecogenomics/GTDBTk/issues/670>`_), (`#674 <https://github.com/Ecogenomics/GTDBTk/issues/674>`_),(`#668 <https://github.com/Ecogenomics/GTDBTk/issues/668>`_) Fixed an issue where GTDB-Tk would crash when using pplacer v1.1.alpha20. This issue is now resolved by fixing pplacer to v1.1.alpha19.
+* (`#671 <https://github.com/Ecogenomics/GTDBTk/issues/671>`_) The limit of number of genomes compared in dense genera has been removed.
+* (`#672 <https://github.com/Ecogenomics/GTDBTk/issues/672>`_) skani is now fixed to v0.3.1 to and uses `sketch` + `search` commands instead of `dist`.
+* (`#665 <https://github.com/Ecogenomics/GTDBTk/issues/665>`_) GTDB-Tk now uses skani v0.3.1 and have a option to save the sketch db for reference genomes for future use( `--skani_sketch_dir` ).
+* (`#669 <https://github.com/Ecogenomics/GTDBTk/issues/669>`_) BaseModel from pydantic is now replaces by DataClass to avoid warnings with pydantic v2.x.
+
+2.5.2
+-----
+
+Bug Fixes:
+
+* This release resolves the ani_screen error that reports ``TypeError: bool() undefined when iterable == total == None``.  (`#663 <https://github.com/Ecogenomics/GTDBTk/issues/663>`_) (`#662 <https://github.com/Ecogenomics/GTDBTk/issues/662>`_)
+
+2.5.1
+-----
+
+Bug Fixes:
+* (`#658 <https://github.com/Ecogenomics/GTDBTk/issues/658>`_) Implement progress bar for comparison process.
+
+
+2.5.0
+-----
+
+Major Changes:
+* GTDB-Tk now uses **Skani exclusively** for genome clustering, replacing the previous Mash/Skani hybrid approach. This change simplifies the CLI and removes the dependency on Mash, streamlining installation and execution.
+
+Bug Fixes:
+* (`#644 <https://github.com/Ecogenomics/GTDBTk/issues/644>`_), (`#641 <https://github.com/Ecogenomics/GTDBTk/issues/641>`_) Fixed compatibility with recent versions of NumPy (≥1.24), which removed the ``tostring()`` method from ``numpy.ndarray``.
+* (`#650 <https://github.com/Ecogenomics/GTDBTk/issues/650>`_) Update CLI with an up-to-date taxon.
+
+
+2.4.1
+-----
+
+Bug Fixes:
+* (`#630 <https://github.com/Ecogenomics/GTDBTk/issues/630>`_) Fixed SyntaxWarning in Python 3.12 by using raw strings for regex in HMMResultsIO.py
+
 
 2.4.0
 -----

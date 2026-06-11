@@ -11,8 +11,8 @@ class __GTDBTkCommonConfig:
     that requires the setting of the GTDB-Tk reference data path.
     """
 
-    MIN_REF_DATA_VERSION = 'r220'
-    COMPATIBLE_REF_DATA_VERSIONS = ['r220']
+    MIN_REF_DATA_VERSION = 'r232'
+    COMPATIBLE_REF_DATA_VERSIONS = ['r232']
 
     BACKBONE_PPLACER_REF_PKG = 'gtdbtk_package_backbone.refpkg'
     CLASS_LEVEL_PPLACER_REF_PKG = 'gtdbtk.package.{iter}.refpkg'
@@ -96,15 +96,10 @@ class __GTDBTkCommonConfig:
     PPLACER_MIN_RAM_ARC = 40
 
     SKANI_SPECIES_THRESHOLD = 95.0
+    SKANI_IDENTITY_SKETCH_THRESHOLD = 85.0
     SKANI_GENOMES_EXT = "_genomic.fna.gz"
+    SKANI_MIN_AF = 15.0
 
-    # Mash configuration
-    MASH_SKETCH_FILE = 'gtdb_ref_sketch.msh'
-    MASH_K_VALUE = 16
-    MASH_S_VALUE = 5000
-    MASH_MAX_DISTANCE = 0.15
-    MASH_D_VALUE = MASH_MAX_DISTANCE
-    MASH_V_VALUE = 1.0
 
     # Config values for checking GTDB-Tk on startup.
     GTDBTK_VER_CHECK = True
@@ -152,10 +147,6 @@ class __GTDBTkCommonConfig:
     @property
     def SKANI_DIR(self):
         return os.path.join(self.GENERIC_PATH, 'skani/')
-
-    @property
-    def MASH_DIR(self):
-        return os.path.join(self.GENERIC_PATH, 'mash/')
 
     @property
     def TAX_FOLDER(self):
@@ -313,12 +304,12 @@ class __GTDBTkCommonConfig:
         return f"gtdb_{self.VERSION_DATA}_rps23.refpkg"
 
     @property
-    def SKANI_GENOMES(self):
+    def SKANI_SKETCHDB(self):
         return os.path.join(self.SKANI_DIR, "database/")
 
     @property
-    def SKANI_GENOME_LIST(self):
-        return os.path.join(self.SKANI_DIR, "genome_paths.tsv")
+    def SKANI_REFERENCE_EXTENSION(self):
+        return "_genomic.fna.gz"
 
     @property
     def MRCA_RED_BAC120(self):
@@ -333,17 +324,17 @@ class __GTDBTkCommonConfig:
         if version is not None and version not in compatible_versions:
             raise ValueError(f"Version {version} is not compatible with this version of GTDB-Tk. Compatible versions are {compatible_versions}")
 
-        if version is None or version==220:
+        if version is None or version==232:
             return {
-                self.PPLACER_DIR: '75fdd0e093c9af6a73cb510c3d0cd2041265e093',
-                self.MASK_DIR: 'f4b8ebfa59526a7a86f09752b47e8de1efc384c7',
+                self.PPLACER_DIR: '4e8ffa1133f10bde827bddb81413d06d62de341e',
+                self.MASK_DIR: '84c7f7a17adc134db4161b15db10ae58389a90c1',
                 self.MARKER_DIR: '163f542c3f0a40f59df45d453aa235b39aa96e27',
-                self.RADII_DIR: '63d06ecc8b4547addd22c5b06ada4a28c5332bcc',
-                self.MSA_FOLDER: '3d5c1cf5346b244fcb0a9d48d2f1a9358a71cc7a',
-                self.METADATA_DIR: '01b8c23253cef097b1bc233d609dae9eb84c98e2',
-                self.TAX_FOLDER: '6758173fa61ae4a77f5588ec2874ea52ed345feb',
-                self.SKANI_DIR: 'ff58a1d7e0584da324d140701ee12cead4f0df9d',
-                self.RED_DIR: '206bd781997fffbac951b4437dd75e6543139fd6'
+                self.RADII_DIR: '546c1769ae19c946ba94b91482f32002a204f598',
+                self.MSA_FOLDER: '8cf2ed4ea53f9201b127dbeed71bcc0fff27e204',
+                self.METADATA_DIR: '1febdba7d2513a8f43c409423aee83ed99df7a78',
+                self.TAX_FOLDER: 'c1e1766fa610229cb7cb45edc9a8fa0eafb44c96',
+                self.SKANI_DIR: '00afba7b7e89a27e4d9aa9b4ce176550b56af09e',
+                self.RED_DIR: '10a0fc1ca4199ff33e6c2fc4bc933318962ab212'
             }
 
 

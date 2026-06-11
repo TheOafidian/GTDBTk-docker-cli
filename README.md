@@ -37,9 +37,15 @@ Documentation for GTDB-Tk can be found [here](https://ecogenomics.github.io/GTDB
 
 ## ✨ New Features
 
-GTDB-Tk v2.4.0+ includes the following new features:
-- `FastANI` has been replaced by `skani` as the primary tool for computing Average Nucleotide Identity (ANI).Users may notice slight variations in the results compared to those obtained using `FastANI`.
+GTDB-Tk v2.7.0+ includes the following new features:
+* **Pre-sketched skani database:** GTDB-Tk now uses a skani pre-sketched database of the GTDB representative genomes. This significantly reduces the database storage footprint from 198 GB (in Release 232) down to 98 GB.
+* **Representative genomes availability:** The GTDB representative genomes are now available via the "Download" page on the GTDB website.
+* **Deprecated flag:** Because the database is already sketched natively, the `--skani_sketch_dir` flag is now deprecated.
+* **Replaced `--skip_ani_screen` with `--place_species`:** The `--skip_ani_screen` flag is now deprecated in v2.7.0 and has been replaced by the `--place_species` flag. The logic has been updated to reflect the new database structure:
+    * *Previously:* Using `--skip_ani_screen`, genomes placed in a genus by pplacer were only compared to representative genomes within that specific genus. 
+    * *Now:* Because the database is a single skani sketch, user genomes are compared against *all* GTDB reference genomes once at the very beginning of the pipeline. When the new `--place_species` flag is selected, the genomes are still explicitly placed in the reference tree.
 
+**⚠️ IMPORTANT MEMORY WARNING:** The divide-and-conquer approach now requires more than 128 GB of RAM. Specifically, you will need at least **140 GB of RAM** for R232.
 
 ## 📈 Performance
 Using ANI screen "can" reduce computation by >50%, although it depends on the set of input genomes. A set of input genomes consisting primarily of new species will not benefit from ANI screen as much as a set of genomes that are largely assigned to GTDB species clusters. In the latter case, the ANI screen will reduce the number of genomes that need to be classified by pplacer which reduces computation time substantially (between 25% and 60% in our testing).
@@ -62,12 +68,10 @@ The Genome Taxonomy Database (GTDB) is described in:
 We strongly encourage you to cite the following 3rd party dependencies:
 
 * Matsen FA, et al. 2010. [pplacer: linear time maximum-likelihood and Bayesian phylogenetic placement of sequences onto a fixed reference tree](https://www.ncbi.nlm.nih.gov/pubmed/21034504). <i>BMC Bioinformatics</i>, 11:538.
-* Jain C, et al. 2019. [High-throughput ANI Analysis of 90K Prokaryotic Genomes Reveals Clear Species Boundaries](https://www.nature.com/articles/s41467-018-07641-9). <i>Nat. Communications</i>, doi: 10.1038/s41467-018-07641-9.
 * Shaw J. and Yu Y.W. 2023. [Fast and robust metagenomic sequence comparison through sparse chaining with skani](https://www.nature.com/articles/s41592-023-02018-3). <i>Nature Methods</i>, 20, pages1661–1665 (2023).
 * Hyatt D, et al. 2010. [Prodigal: prokaryotic gene recognition and translation initiation site identification](https://www.ncbi.nlm.nih.gov/pubmed/20211023). <i>BMC Bioinformatics</i>, 11:119. doi: 10.1186/1471-2105-11-119.
 * Price MN, et al. 2010. [FastTree 2 - Approximately Maximum-Likelihood Trees for Large Alignments](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2835736/). <i>PLoS One</i>, 5, e9490.
 * Eddy SR. 2011. [Accelerated profile HMM searches](https://www.ncbi.nlm.nih.gov/pubmed/22039361). <i>PLOS Comp. Biol.</i>, 7:e1002195.
-* Ondov BD, et al. 2016. [Mash: fast genome and metagenome distance estimation using MinHash](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-016-0997-x). <i>Genome Biol</i> 17, 132. doi: 10.1186/s13059-016-0997-x.
 
 
 ## © Copyright

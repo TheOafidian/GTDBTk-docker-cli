@@ -14,7 +14,7 @@
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.     #
 #                                                                             #
 ###############################################################################
-
+import datetime
 import logging
 import multiprocessing as mp
 import os
@@ -22,9 +22,19 @@ import re
 import shutil
 import subprocess
 import tempfile
+import time
+from pathlib import Path
 
+from tqdm import tqdm
+
+from gtdbtk.biolib_lite.common import make_sure_path_exists
 from gtdbtk.exceptions import GTDBTkExit
 from gtdbtk.tools import tqdm_log
+from gtdbtk.config.common import CONFIG
+
+from collections import namedtuple
+
+SkaniResult = namedtuple('SkaniResult', ['ref_file', 'query_file', 'ani', 'af_r', 'af_q'])
 
 
 class SkANI(object):
@@ -64,8 +74,142 @@ class SkANI(object):
         except Exception as e:
             return 'unknown'
 
+    @staticmethod
+    def _get_reference_genome_id(ref_path):
+        """ By default skani outputs the full path of the genome in the result
+        genome id. This function retrieves the genome id from the path, get the base name
+        and remove the extension _genomic.fna.gz (CONFIG.SKANI_REFERENCE_EXTENSION)"""
+        ref_filename = os.path.basename(ref_path)
+        return ref_filename.replace(CONFIG.SKANI_REFERENCE_EXTENSION, '')
 
-    def run(self, dict_compare, dict_paths,preset='--medium', report_progress=True):
+    def parse_result_line(self, line):
+        """Parses a line from Skani output into a SkaniResult."""
+        tokens = line.strip().split('\t')
+        if len(tokens) < 5:
+            raise ValueError(f"Unexpected Skani result format: {line}")
+        return SkaniResult(
+            ref_file=tokens[0],
+            query_file=tokens[1],
+            ani=float(tokens[2]),
+            af_r=float(tokens[3]),
+            af_q=float(tokens[4])
+        )
+
+
+    def run_vs_all_reps(self, genomes, prefix,output_dir=None,skani_preset=None, report_progress=True):
+        """Runs skani against all representatives in the GTDB.
+
+        Parameters
+        ----------
+        genomes : dict[str, str]
+            A dictionary containing the genome ids and their paths.
+        ref_genomes : dict[str, str]
+            A dictionary containing the reference genome ids and their paths.
+        prefix : str
+            The prefix to use for the output files.
+        preset : str, optional
+            The preset to use for skani, e.g. '--medium' or '--slow'.
+        report_progress : bool, optional
+            If True, report the progress of the skani run.
+
+        Returns
+        -------
+        dict[str, dict[str, dict[str, float]]]
+            A dictionary containing the ANI and AF for each comparison.
+        """
+
+        # debug only tke 5 genomes and 5 ref_genomes
+        genomes = {k: genomes[k] for k in list(genomes)}
+
+        # genomes = ref_genomes
+
+        # Create a temporary directory to store the query and reference lists.
+        with tempfile.TemporaryDirectory(prefix=prefix) as tmpdir:
+            # Create the query and reference lists.
+            ql = os.path.join(tmpdir, 'query_list.txt')
+
+            # Write the query and reference lists to disk.
+            reverse_dict_ql=self.write_list_to_file(genomes, ql)
+
+            # Run skani
+            results_all_vs_all= self.run_all_vs_all(ql,reverse_dict_ql,tmpdir,skani_preset,
+                                                    report_progress=report_progress)
+
+            return self.parse_results(iter(results_all_vs_all))
+
+
+    def run_all_vs_all(self, ql,reverse_ql,tmpdir,skani_preset=None,report_progress=True):
+        """Runs skani in batch mode against all genomes in the GTDB.
+
+        Parameters
+        ----------
+        ql : str
+            The path to the query list file.
+        preset : str, optional
+            The preset to use for skani, e.g. '--medium' or '--slow'.
+        report_progress : bool, optional
+            If True, report the progress of the skani run.
+
+        Returns
+        -------
+        set[tuple[str, str, float, float, float]]
+            A set containing tuples of the form (query_id, reference_id, ANI, AF_reference, AF_query).
+
+        """
+
+        ani_af = set()
+
+        args = ['skani', 'search']
+        if skani_preset:
+            # is skani_preset doesnt start with "--" then add "--" to it
+            if not skani_preset.startswith('--'):
+                preset = f'--{skani_preset}'
+                args.append(preset)
+
+
+        #args += ['-t',f'{self.cpus}','-s',f'{skani_s}','--min-af',f'{skani_min_af}','--trace','--ql', ql, '--rl', rl, '-o', '/dev/stdout']
+        args += ['-t',f'{self.cpus}','-d', CONFIG.SKANI_SKETCHDB, '--ql', ql,'--short-header', '-o', '/dev/stdout']
+
+        result_lines = set()
+        capture_output= []
+
+        proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, encoding='utf-8')
+
+        for line in proc.stdout:
+            line = line.strip()
+            capture_output.append(line)
+            self.logger.debug(line)
+            # if the line does not start with a timer we parse it
+            if not re.match(r'^\[\d\d:\d\d:\d\d\.\d+\]', line):
+                result_lines.add((line.strip()))
+
+        proc.wait()
+        #remove the last printed line
+
+        if proc.returncode != 0:
+            self.logger.error('STDOUT:\n' + "\n".join(capture_output))
+            raise GTDBTkExit('skani returned a non-zero exit code.')
+
+        if len(result_lines)> 1:
+            for result_line in result_lines:
+                try:
+                    if all(token in result_line.strip().split('\t') for token in ['Ref_file', 'Query_file', 'ANI', 'Align_fraction_ref', 'Align_fraction_query']):
+                        self.logger.info('Capturing skani results.')
+                        continue
+                    parsed = self.parse_result_line(result_line)
+                    ani_af.add((
+                        reverse_ql.get(parsed.query_file),
+                        self._get_reference_genome_id(parsed.ref_file),
+                        parsed.ani,
+                        parsed.af_r,
+                        parsed.af_q
+                    ))
+                except Exception as e:
+                    self.logger.error(f'Error parsing line: {result_line} ({e})')
+                    continue
+        return ani_af
+
+    def run(self, dict_compare, dict_paths,skani_preset=None, report_progress=True):
         """Runs skani in batch mode.
 
         Parameters
@@ -91,7 +235,7 @@ class SkANI(object):
         list_comparisons = [(user_id, ref_id) for user_id, values in dict_compare.items() for ref_id in values]
         for qry, ref in list_comparisons:
             n_total += 1
-            q_worker.put((qry, ref, dict_paths.get(qry), dict_paths.get(ref), preset))
+            q_worker.put((qry, ref, dict_paths.get(qry), dict_paths.get(ref), skani_preset))
 
         # Set the terminate condition for each worker thread.
         [q_worker.put(None) for _ in range(self.cpus)]
@@ -130,7 +274,7 @@ class SkANI(object):
 
         # Process and return each of the results obtained
         q_results.put(None)
-        return self._parse_result_queue(q_results)
+        return self.parse_results(q_results, from_queue=True)
 
     def _worker(self, q_worker, q_writer, q_results):
         """Operates skani in list mode.
@@ -154,7 +298,7 @@ class SkANI(object):
             q, r, q_path,r_path,preset = job
 
             # Run skani
-            result = self.run_proc(q, r, q_path, r_path, preset)
+            result = self.run_proc(q, r, q_path, r_path,preset)
             q_results.put(result)
             q_writer.put(True)
 
@@ -174,7 +318,7 @@ class SkANI(object):
             for _ in iter(q_writer.get, None):
                 p_bar.update()
 
-    def run_proc(self, qid, rid, ql, rl, preset):
+    def run_proc(self, qid, rid, ql, rl,skani_preset, report_progress=True):
         """Runs the skani process.
 
         Parameters
@@ -195,11 +339,17 @@ class SkANI(object):
         dict[str, dict[str, float]]
             The ANI/AF of the query genomes to the reference genomes.
         """
-        args = ['skani', 'dist',
-                preset,
-                '-q', ql,
-                '-r', rl,
-                '-o', '/dev/stdout']
+        #
+        args = ['skani', 'dist']
+        if skani_preset:
+            # is skani_preset doesnt start with "--" then add "--" to it
+            if not skani_preset.startswith('--'):
+                preset = f'--{skani_preset}'
+                args.append(preset)
+        #args += ['-s',f'{skani_s}','--min-af',f'{skani_min_af}','-q', ql, '-r', rl, '-o', '/dev/stdout']
+        args += ['-q', ql, '-r', rl, '-o', '/dev/stdout']
+
+
         # self.logger.debug(' '.join(args))
         proc = subprocess.Popen(args, stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE, encoding='utf-8')
@@ -212,11 +362,8 @@ class SkANI(object):
 
         result_lines = stdout.splitlines()
         if len(result_lines) == 2:
-            tokens = result_lines[1].split('\t')
-            ani = float(tokens[2])
-            af_r = float(tokens[3])
-            af_q = float(tokens[4])
-            ani_af = (qid, rid, ani, af_r, af_q)
+            parsed = self.parse_result_line(result_lines[1])
+            ani_af = (qid, rid, parsed.ani, parsed.af_r, parsed.af_q)
         else:
         #     # genomes too divergent to determine ANI and AF
         #     # with skani so default to zeros
@@ -227,7 +374,7 @@ class SkANI(object):
         return ani_af
 
 
-    def _maybe_write_list(self, d_genomes, path):
+    def write_list_to_file(self, d_genomes, path):
         """Writes a query/reference list to disk.
 
         Parameters
@@ -237,11 +384,55 @@ class SkANI(object):
         path : str
             The path to write the file to.
         """
+
+
         if d_genomes is None or path is None:
             return
+        reverse_dict_ql = {v: k for k, v in d_genomes.items()}
         with open(path, 'w') as fh:
             for gid, gid_path in d_genomes.items():
                 fh.write(f'{gid_path}\n')
+        return reverse_dict_ql
+
+    def parse_results(self, results, from_queue=False):
+        """Parses results into a nested dictionary of ANI and AF values.
+
+        Parameters
+        ----------
+        results : Iterable or multiprocessing.Queue
+            The input results: either an iterable of tuples or a multiprocessing.Queue.
+        from_queue : bool
+            If True, the input is treated as a Queue and will read until a None is received.
+
+        Returns
+        -------
+        dict[str, dict[str, dict[str, float]]]
+            The ANI/AF of the query genome to all reference genomes.
+        """
+        out = dict()
+
+        while True:
+            if from_queue:
+                job = results.get(block=True)
+                if job == 'null':
+                    continue
+                if job is None:
+                    break
+            else:
+                try:
+                    job = next(results)
+                except StopIteration:
+                    break
+
+            qid, rid, ani, af_r, af_q = job
+            max_af = max(af_r, af_q) / 100
+
+            if qid not in out:
+                out[qid] = {rid: {'ani': ani, 'af': max_af}}
+            else:
+                out[qid][rid] = {'ani': ani, 'af': max_af}
+
+        return out
 
     def _parse_result_queue(self, q_results):
         """Creates the output dictionary given the results from skani
@@ -274,3 +465,29 @@ class SkANI(object):
                 out[qid][rid] = {'ani': ani, 'af': max_af}
 
         return out
+
+    def _parse_result_set(self, result_set):
+        """Parses the result set from skani.
+
+        Parameters
+        ----------
+        result_set : set[tuple[str, str, float, float, float]]
+            The set of results from skani.
+
+        Returns
+        -------
+        dict[str, dict[str, dict[str, float]]]
+            The ANI/AF of the query genome to all reference genomes.
+        """
+        out = dict()
+        for qid, rid, ani, af_r, af_q in result_set:
+            max_af = max(af_r, af_q)
+            # af is a percent, we need to divide it by 100
+            max_af = max_af / 100
+            if qid not in out:
+                out[qid] = {rid: {'ani': ani, 'af': max_af}}
+            else:
+                out[qid][rid] = {'ani': ani, 'af': max_af}
+
+        return out
+
